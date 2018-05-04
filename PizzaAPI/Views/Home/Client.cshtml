@@ -1,0 +1,227 @@
+﻿
+@{
+    ViewBag.Title = "Client";
+}
+
+@section Head {
+    <script type="text/javascript" src="@Url.Content("~/Content/js/angular.min.js")"></script>
+    <script type="text/javascript" src="@Url.Content("~/Content/js/app.js")"></script>
+    <style>
+
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: "Helvetica Neue", Helvetica, sans-serif;
+        }
+
+        ul {
+            list-style-position: inside;
+        }
+
+        .orderItem {
+            padding: 5px 0;
+            border-bottom: 1px dashed grey;
+        }
+
+        .orderHistoryItem {
+            border: 1px dashed grey;
+            padding: 10px;
+            float: right;
+            width: 40%;
+        }
+    </style>
+}
+
+<div ng-app="app">
+    <div ng-controller="MainController">
+        <header class="header header--main">
+	        <div class="container">
+	            <div class="row">
+	                <div class="col-sm-12">
+		                <h1>Client</h1>
+                    </div>
+	            </div>
+	        </div>
+	    </header>
+        <div class="main container">
+            <div class="row">
+                <div class="col-md-9">
+                    <div ng-if="!state.checkout">
+	                    <div class="row">
+	                        <div class="pizzas">
+                                <div class="col-sm-6 col-md-6" ng-repeat="pizza in pizzas.combined_by_size">
+				                    <h2>{{ pizza.current_pizza.Name }}</h2>
+                                    <h3>Toppings:</h3>
+                                    <ul class="list-inline">
+                                        <li ng-repeat="topping in pizza.current_pizza.Toppings">{{ topping.Name }}</li>
+                                    </ul>
+                                    <h3>Size:</h3>
+                                    <div class="pizza-sizes" >
+                                        <ul class="list-inline">
+                                            <li class="list-inline" ng-repeat="size in pizza.pizza_sizes">
+                                                <label>
+                                                    <span class="pull-right">{{ size.size }} - {{ size.price | currency }} </span>
+                                                    <input ng-click="selectedPizzaSize(pizza, size)" ng-checked="pizza.current_pizza.Size == size.size"  ng-value="pizza.current_pizza.Size == size.size" name="{{pizza.Name}}" type="radio" /></label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div ng-if="pizza.extra_toppings.active">
+                                        <h3>Extra Toppings:</h3>
+                                            <div ng-repeat="extraTopping in pizza.extra_toppings.toppings">
+                                                <label for="{{ extraTopping.name + extraTopping.size }}">
+							                    <input ng-checked="extraTopping.active == true" ng-model="extraTopping.active" name="{{ extraTopping.name + extraTopping.size }}"
+                                   type="checkbox" />{{ extraTopping.name }} - {{ extraTopping.price | currency }}</label>
+                                            </div>
+                                    </div>
+                                    <div class="pizza-controlls">
+                                        <div class="row">
+                                            <div class="col-sm-6 col-md-6">
+                                                <button ng-click="getAdditionalToppings(pizza)" type="button" class="btn btn-default btn-block">Extra Toppings</button>
+                                            </div>
+                                            <div class="col-sm-6 col-md-6">
+                                             <button class="btn btn-block" ng-click="addToCart(pizza)">Add to Cart</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="user-verification">
+		                <div class="row">
+			                <div class="col-md-12">
+			                    <div class="active-login">
+			                    <div ng-if="currentUser.access_token">
+                                    <h3>Logged in: {{ currentUser.userName }}</h3>
+                                    <a href="#" ng-click="logout()">Logout</a>
+			                    </div>
+			                    </div>
+			                    <div class="login-form" ng-if="!currentUser.access_token">
+			                        <form name="form" ng-submit="login()" ng-if="!currentUser.access_token" role="form">
+                                        <h2>Login</h2>
+                                        <div>
+                                            <label for="username">Username/email:</label>
+                                            <input type="text" name="username" id="username" ng-model="loginUserModel.username">
+                                        </div>
+                                        <div>
+                                            <label for="password">Password:</label>
+                                            <input type="password" name="password" id="password" ng-model="loginUserModel.password">
+                                        </div>
+                                        <input type="submit">
+			                        </form>
+			                    </div>
+                            </div>
+                            <div class="col-md-12">
+			                    <div class="registration-form">
+		    	                    <form name="form" ng-submit="register()" ng-if="!currentUser.access_token" role="form">
+                                        <h3>Register</h3>
+				                        <div>
+                                            <label for="username">Username/email:</label>
+                                            <input type="text" name="username" id="username" ng-model="registerUserModel.username">
+				                        </div>
+				                        <div>
+                                            <label for="password">Password:</label>
+                                            <input type="password" name="password" id="password" ng-model="registerUserModel.password">
+				                        </div>
+				                        <div>
+                                            <label for="confirmPassword">Confirm Password:</label>
+                                            <input type="password" name="confirmPassword" id="confirmPassword" ng-model="registerUserModel.confirmPassword">
+				                        </div>
+				                    <input type="submit">
+			                        </form>
+			                    </div>
+			                </div>
+			            </div>
+		            </div>
+		            <div class="order" ng-if="!state.checkout">
+                        <div class="cart">
+                            <h2>Cart</h2>
+                            <button ng-click="resetCart()">Reset Cart</button>
+                            <div ng-repeat="item in cart.OrderItems">
+                                <h3>Pizza: {{ item.Pizza.Name }} - {{ item.Pizza.Price | currency }}</h3>
+                                <p>Size: {{ item.Pizza.Size }}</p>
+                                <ul>
+                                    <h4>Toppings</h4>
+                                    <li ng-repeat="topping in item.Pizza.Toppings">{{ topping.Name }}</li>
+                                </ul>
+                                <ul>
+                                    <h4>Extra Toppings</h4>
+                                    <li ng-repeat="topping in item.ExtraToppings">{{ topping.Name }} - {{ topping.Price | currency }}</li>
+                                </ul>
+                                <p>Price: {{ item.Price | currency }}</p>
+                                <button ng-click="removeFromCart(item)">Remove from cart</button>
+                            </div>
+                        </div>
+                        <div class="orderItems" ng-if="cart">
+                            <input ng-model="cart.CurrentVoucher" type="text" placeholder="Enter voucher code" />
+                            <button ng-click="applyVoucher(cart)">Apply voucher</button>
+                            <h4>Voucher:</h4>
+                            <p ng-if="cart.Discount < 1">No voucher</p>
+                            <p ng-if="cart.Discount > 0">{{ cart.CurrentVoucher }} - {{ cart.Discount | currency }} discount.</p>
+                            <h3 ng-if="cart.Discount < 1">Total: {{ cart.Price | currency }}</h3>
+                            <h3 ng-if="cart.Discount > 0">
+                                Total:<s>{{ cart.Price | currency }}</s> {{ cart.Price - cart.Discount | currency }}
+                            </h3>
+                        <div>
+                            <input ng-change="applyDelivery(cart.Delivery)" ng-model="cart.Delivery" name="delivery" type="checkbox" />
+                            <label>Delivery</label>
+                            <button ng-click="state.checkout = true" ng-if="cart.OrderItems.length > 0">Checkout</button>
+                            <div class="checkout" ng-if="state.checkout">
+                            <h2>Checkout</h2>
+                            <div class="orderItems pizzas">
+                                <div ng-repeat="item in cart.OrderItems">
+                                <h3>Pizza: {{ item.Pizza.Name }}</h3>
+                                <p>Size: {{ item.Pizza.Size }}</p>
+                                <ul>
+                                    <li ng-repeat="topping in item.Pizza.Toppings">{{ topping.Name }}</li>
+                                </ul>
+                                <p>Price: {{ item.Price | currency }}</p>
+                            </div>
+                        </div>
+                    </div> 
+                    <div class="voucher">
+                            <h4>Voucher:</h4>
+                            <p ng-if="cart.Discount < 1">No voucher</p>
+                            <p ng-if="cart.Discount > 0">{{ cart.CurrentVoucher }} - {{ cart.Discount | currency }} discount.</p>
+                            <h3 ng-if="cart.Discount < 1">Total: {{ cart.Price | currency }}</h3>
+                            <h3 ng-if="cart.Discount > 0">
+                            Total:<s>{{ cart.Price | currency }}</s> {{ cart.Price - cart.Discount | currency }}
+                            </h3>
+                            <h3>Total: {{ cart.Price | currency }}</h3>
+                            <button ng-click="submitOrder()">Submit</button>
+                            <p>{{ errorMessage }}</p>
+                    </div>
+                    <div class="order-history">
+                        <div ng-if="!state.checkout && currentUser.access_token">
+                        <h2>Order History</h2>
+                        <div class="orderHistoryItem" ng-repeat="order in currentUser.orders">
+                            <h2>Order: {{ order.OrderId }}</h2>
+                            <h3>Order Items:</h3>
+                            <div class="orderItem" ng-repeat="orderItem in order.OrderItems">
+                                <h4>Pizza</h4>
+                                <p>{{ orderItem.Pizza.Name}} ({{ orderItem.Pizza.Size}}) - {{ orderItem.Price | currency }}</p>
+                                <h4>Extra Toppings:</h4>
+                                <ul>
+                                    <li ng-repeat="topping in orderItem.ExtraToppings">{{ topping.Name }} - {{ topping.Price | currency }}</li>
+                                    <li ng-if="orderItem.ExtraToppings.length < 1">None selected</li>
+                                </ul>
+                            </div>
+                            <div class="voucher">
+                                <h4>Voucher:</h4>
+                                <p ng-if="order.Discount < 1">No voucher</p>
+                                <p ng-if="order.Discount > 0">{{ order.CurrentVoucher }} - {{ order.Discount | currency }} discount.</p>
+                                <h3 ng-if="order.Discount < 1">Total: {{ order.Price | currency }}</h3>
+                                <h3 ng-if="order.Discount > 0">
+                                    Total:<s>{{ order.Price | currency }}</s> {{ order.Price - order.Discount | currency }}
+                                </h3>
+                                <button ng-click="reorder(order)">Reorder</button>
+                        </div>
+                    </div>
+                </div>
+	        </div> 
+        </div>   
+    </div>
+</div>
